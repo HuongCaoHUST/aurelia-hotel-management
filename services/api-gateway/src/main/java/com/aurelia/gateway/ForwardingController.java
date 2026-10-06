@@ -42,6 +42,18 @@ public class ForwardingController {
             byte[] responseBody = res.getBody() == null ? new byte[0] : res.getBody().readAllBytes();
             HttpHeaders headers = new HttpHeaders();
             headers.putAll(res.getHeaders());
+            // RestClient/Spring will calculate these headers for the new response.
+            // Forwarding them from the upstream response can produce duplicate
+            // Transfer-Encoding headers and make Nginx return 502.
+            headers.remove(HttpHeaders.TRANSFER_ENCODING);
+            headers.remove(HttpHeaders.CONTENT_LENGTH);
+            headers.remove(HttpHeaders.CONNECTION);
+            headers.remove("Keep-Alive");
+            headers.remove("Proxy-Authenticate");
+            headers.remove("Proxy-Authorization");
+            headers.remove("TE");
+            headers.remove("Trailer");
+            headers.remove("Upgrade");
             return ResponseEntity.status(res.getStatusCode()).headers(headers).body(responseBody);
         });
     }
