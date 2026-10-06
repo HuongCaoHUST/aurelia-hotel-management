@@ -5,7 +5,7 @@ import com.aurelia.auth.repository.RoleRepository;
 import com.aurelia.auth.repository.UserRepository;
 import com.aurelia.auth.entity.Role;
 import com.aurelia.auth.entity.User;
-import com.aurelia.auth.entity.RoleName;
+import com.aurelia.auth.entity.Permission;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -47,7 +47,7 @@ public class AuthService {
                 .build();
 
         // Assign CUSTOMER role by default
-        Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
+        Role customerRole = roleRepository.findByName("CUSTOMER")
                 .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
         user.setRoles(new HashSet<>(Collections.singletonList(customerRole)));
 
@@ -114,6 +114,9 @@ public class AuthService {
                         .id(role.getId())
                         .name(role.getName().toString())
                         .description(role.getDescription())
+                        .permissions(role.getPermissions().stream().map(permission -> PermissionResponse.builder()
+                                .id(permission.getId()).code(permission.getCode()).description(permission.getDescription()).build())
+                                .collect(Collectors.toSet()))
                         .build())
                 .collect(Collectors.toSet());
 

@@ -33,6 +33,8 @@ public class SecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/api/auth/register", "/api/auth/login", "/api/health", "/api/health/**", "/actuator/**").permitAll()
+                        .requestMatchers("/api/roles/**").hasAuthority("ROLE_MANAGE_ROLES")
+                        .requestMatchers("/api/permissions/**").hasAuthority("ROLE_MANAGE_PERMISSIONS")
                         .requestMatchers("/api/auth/**").authenticated()
                         .anyRequest().authenticated()
                 )

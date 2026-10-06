@@ -1,6 +1,7 @@
 package com.aurelia.auth.config;
 
 import com.aurelia.auth.service.JwtTokenProvider;
+import com.aurelia.auth.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -15,7 +16,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @Component
@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final UserRepository userRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -37,7 +38,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 if (email != null) {
                     // Extract roles from token claims
                     UsernamePasswordAuthenticationToken authentication = 
-                            new UsernamePasswordAuthenticationToken(email, null, extractAuthorities(jwt));
+                            new UsernamePasswordAuthenticationToken(email, null, extractAuthorities(email));
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     
                     SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -67,13 +68,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     /**
      * Extract authorities/roles from JWT token
      */
-    private java.util.Collection<SimpleGrantedAuthority> extractAuthorities(String jwt) {
-        try {
-            // This is a simplified version - in production, you should properly parse JWT claims
-            return Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
-        } catch (Exception e) {
-            log.warn("Error extracting authorities from token: {}", e.getMessage());
-            return Arrays.asList(new SimpleGrantedAuthority("ROLE_USER"));
-        }
+    private java.util.Collection<SimpleGrantedAuthority> extractAuthorities(String email) {
+        return userRepository.findByEmail(email).map(user -> user.getRoles().stream()
+                .flatMap(role -> java.util.stream.Stream.concat(
+                        java.util.stream.Stream.of(new SimpleGrantedAuthority("ROLE_" + role.getName())),
+                        role.getPermissions().stream().map(permission -> new SimpleGrantedAuthority(permission.getCode()))))
+                .collect(Collectors.toSet())).orElseGet(java.util.Set::of);
     }
 }

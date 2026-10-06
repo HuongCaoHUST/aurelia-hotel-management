@@ -29,9 +29,9 @@ public class JwtTokenProvider {
      * Generate access token with user email and roles
      */
     public String generateAccessToken(String email, Set<Role> roles) {
-        String roleString = roles.stream()
-                .map(role -> role.getName().toString())
-                .collect(Collectors.joining(","));
+        String roleString = roles.stream().map(Role::getName).collect(Collectors.joining(","));
+        String permissionString = roles.stream().flatMap(role -> role.getPermissions().stream())
+                .map(permission -> permission.getCode()).distinct().collect(Collectors.joining(","));
 
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
@@ -41,6 +41,7 @@ public class JwtTokenProvider {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("roles", roleString)
+                .claim("permissions", permissionString)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(key, SignatureAlgorithm.HS256)

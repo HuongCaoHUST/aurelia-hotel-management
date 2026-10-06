@@ -13,4 +13,5 @@ public class RoleResponse {
     private Long id;
     private String name;
     private String description;
+    private java.util.Set<PermissionResponse> permissions;
 }

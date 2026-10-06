@@ -1,7 +1,8 @@
 package com.aurelia.auth.config;
 
 import com.aurelia.auth.entity.Role;
-import com.aurelia.auth.entity.RoleName;
+import com.aurelia.auth.entity.Permission;
+import com.aurelia.auth.repository.PermissionRepository;
 import com.aurelia.auth.entity.User;
 import com.aurelia.auth.repository.RoleRepository;
 import com.aurelia.auth.repository.UserRepository;
@@ -21,6 +22,7 @@ import java.util.HashSet;
 public class DataInitializer {
 
     private final RoleRepository roleRepository;
+    private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -30,11 +32,11 @@ public class DataInitializer {
     @Bean
     public CommandLineRunner initializeData() {
         return args -> {
-            // Initialize roles if they don't exist
-            Arrays.stream(RoleName.values()).forEach(roleName -> {
+            // Seed defaults once; all subsequent roles and permissions are database records.
+            Arrays.asList("CUSTOMER", "RECEPTIONIST", "HOUSEKEEPER", "TECHNICIAN", "MANAGER", "ADMIN").forEach(roleName -> {
                 if (roleRepository.findByName(roleName).isEmpty()) {
                     Role role = Role.builder()
-                            .name(roleName)
+                        .name(roleName)
                             .description("Role: " + roleName)
                             .build();
                     roleRepository.save(role);
@@ -42,11 +44,20 @@ public class DataInitializer {
                 }
             });
 
+            Arrays.asList("ROLE_MANAGE_ROLES", "ROLE_MANAGE_PERMISSIONS").forEach(code ->
+                    permissionRepository.findByCode(code).orElseGet(() -> permissionRepository.save(
+                            Permission.builder().code(code).description(code).build())));
+
+            Role admin = roleRepository.findByName("ADMIN").orElseThrow();
+            admin.getPermissions().add(permissionRepository.findByCode("ROLE_MANAGE_ROLES").orElseThrow());
+            admin.getPermissions().add(permissionRepository.findByCode("ROLE_MANAGE_PERMISSIONS").orElseThrow());
+            roleRepository.save(admin);
+
             // Create test user if doesn't exist
             if (!userRepository.existsByEmail("admin@example.com")) {
-                Role adminRole = roleRepository.findByName(RoleName.ADMIN)
+                Role adminRole = roleRepository.findByName("ADMIN")
                         .orElseThrow(() -> new RuntimeException("ADMIN role not found"));
-                Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
+                Role customerRole = roleRepository.findByName("CUSTOMER")
                         .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
 
                 User adminUser = User.builder()
@@ -63,7 +74,7 @@ public class DataInitializer {
 
             // Create test customer if doesn't exist
             if (!userRepository.existsByEmail("customer@example.com")) {
-                Role customerRole = roleRepository.findByName(RoleName.CUSTOMER)
+                Role customerRole = roleRepository.findByName("CUSTOMER")
                         .orElseThrow(() -> new RuntimeException("CUSTOMER role not found"));
 
                 User customerUser = User.builder()
