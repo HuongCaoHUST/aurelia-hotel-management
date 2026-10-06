@@ -12,17 +12,13 @@ import java.util.Enumeration;
 
 @RestController
 public class ForwardingController {
-    private final RestClient.Builder restClientBuilder;
+    private final RestClient.Builder restClientBuilder = RestClient.builder();
     @Value("${services.auth}") private String auth;
     @Value("${services.booking}") private String booking;
     @Value("${services.room}") private String room;
     @Value("${services.housekeeping}") private String housekeeping;
     @Value("${services.maintenance}") private String maintenance;
     @Value("${services.notification}") private String notification;
-
-    public ForwardingController(RestClient.Builder restClientBuilder) {
-        this.restClientBuilder = restClientBuilder;
-    }
 
     @RequestMapping("/api/**")
     public ResponseEntity<byte[]> forward(HttpServletRequest request) throws IOException {

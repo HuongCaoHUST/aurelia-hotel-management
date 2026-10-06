@@ -34,3 +34,5 @@ build/
 
 ### Local Docker secrets ###
 .env
+
+/Almaris HTML
