@@ -1,6 +1,6 @@
 package com.aurelia.auth.service;
 
-import com.aurelia.aurelia_hotel_management.domain.entity.Role;
+import com.aurelia.auth.entity.Role;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;

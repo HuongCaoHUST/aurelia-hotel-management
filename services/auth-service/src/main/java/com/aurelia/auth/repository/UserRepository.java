@@ -1,6 +1,6 @@
 package com.aurelia.auth.repository;
 
-import com.aurelia.aurelia_hotel_management.domain.entity.User;
+import com.aurelia.auth.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.Optional;
