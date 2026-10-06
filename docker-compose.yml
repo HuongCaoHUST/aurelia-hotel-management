@@ -36,7 +36,8 @@ services:
 
   frontend-staff:
     build:
-      context: ./frontend-staff
+      context: .
+      dockerfile: frontend-staff/Dockerfile
       args: {VITE_API_BASE_URL: /api, VITE_BASE_PATH: /staff/}
     networks: [hotel-network]
     restart: on-failure:3
