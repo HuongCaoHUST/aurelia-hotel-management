@@ -1,7 +1,6 @@
 package com.aurelia.gateway;
 
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -12,7 +11,6 @@ import java.io.IOException;
 import java.util.Enumeration;
 
 @RestController
-@RequiredArgsConstructor
 public class ForwardingController {
     private final RestClient.Builder restClientBuilder;
     @Value("${services.auth}") private String auth;
@@ -21,6 +19,10 @@ public class ForwardingController {
     @Value("${services.housekeeping}") private String housekeeping;
     @Value("${services.maintenance}") private String maintenance;
     @Value("${services.notification}") private String notification;
+
+    public ForwardingController(RestClient.Builder restClientBuilder) {
+        this.restClientBuilder = restClientBuilder;
+    }
 
     @RequestMapping("/api/**")
     public ResponseEntity<byte[]> forward(HttpServletRequest request) throws IOException {
