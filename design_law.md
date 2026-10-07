@@ -219,3 +219,4 @@ Staff frontend tham khảo bố cục quản trị của `design_template/React-
 - Khi API staff CRUD chưa sẵn sàng, UI phải hiển thị rõ trạng thái demo/local state; không tạo cảm giác thay đổi đã được lưu server.
 - Không dùng icon Unicode làm icon chức năng trong dashboard; ưu tiên SVG inline nhất quán, có `aria-hidden` cho icon trang trí và accessible label cho icon button.
 - Staff accounts có các lựa chọn con được thụt vào trong sidebar như `Danh sách`, `Phân quyền`, `Nhật ký truy cập`. Bám pattern Acara: các mục con là text list gọn, không dùng card, pill, rail hoặc container nền riêng; active state chỉ đổi màu/weight.
+- Navigation và CTA theo role/permission phải được ẩn khi người dùng không có quyền. Dashboard yêu cầu role `ADMIN` + `DASHBOARD_VIEW`; Staff accounts yêu cầu role `ADMIN` + `ROLE_MANAGE_ROLES`. Client-side guard chỉ là UX—mọi API thực tế vẫn phải được backend kiểm soát quyền.

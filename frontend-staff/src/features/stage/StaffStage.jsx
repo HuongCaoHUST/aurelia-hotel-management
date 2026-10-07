@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { hasPermission, hasRole, staffPermissions } from '../../app/access.js';
 
 const initialStaff = [
   { id: 1, name: 'Nguyễn Minh Anh', email: 'minhanh@aureliahotel.com', role: 'Receptionist', department: 'Front office', status: 'Active', initials: 'MA', lastActive: '2 min ago', color: 'gold' },
@@ -8,8 +9,8 @@ const initialStaff = [
 ];
 
 const navItems = [
-  { id: 'dashboard', label: 'Overview', icon: 'grid' },
-  { id: 'accounts', label: 'Staff accounts', icon: 'users' },
+  { id: 'dashboard', label: 'Overview', icon: 'grid', permission: staffPermissions.viewDashboard },
+  { id: 'accounts', label: 'Staff accounts', icon: 'users', permission: staffPermissions.manageStaffAccounts },
 ];
 
 const stats = [
@@ -55,7 +56,10 @@ function Icon({ name, size = 18 }) {
 }
 
 export function StaffStage({ user, onLogout }) {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const isAdmin = hasRole(user, 'ADMIN');
+  const canViewDashboard = isAdmin && hasPermission(user, staffPermissions.viewDashboard);
+  const canManageStaffAccounts = isAdmin && hasPermission(user, staffPermissions.manageStaffAccounts);
+  const [activeTab, setActiveTab] = useState(() => canViewDashboard ? 'dashboard' : 'accounts');
   const [accountSection, setAccountSection] = useState('list');
   const [staff, setStaff] = useState(initialStaff);
   const [search, setSearch] = useState('');
@@ -66,6 +70,7 @@ export function StaffStage({ user, onLogout }) {
   const fullName = user?.fullName || [user?.firstName, user?.lastName].filter(Boolean).join(' ') || user?.email || 'Staff member';
   const role = user?.roles?.[0]?.name || user?.roles?.[0] || 'Staff administrator';
   const firstName = fullName.split(' ')[0];
+  const accessibleNavItems = navItems.filter((item) => hasPermission(user, item.permission));
 
   const filteredStaff = useMemo(() => staff.filter((member) => {
     const query = search.toLowerCase();
@@ -104,27 +109,31 @@ export function StaffStage({ user, onLogout }) {
     showNotice(`${member.name} is now ${nextStatus.toLowerCase()}.`);
   }
 
+  if (!accessibleNavItems.length) {
+    return <AccessDenied fullName={fullName} onLogout={onLogout} />;
+  }
+
   return (
     <div className="admin-shell">
       <aside className={`admin-sidebar ${isSidebarOpen ? 'is-open' : ''}`}>
         <div className="sidebar-brand brand brand-dark"><span className="brand-mark">A</span><span><strong>AURELIA</strong><small>HOTEL OPERATIONS</small></span></div>
         <div className="sidebar-section-label">Workspace</div>
-        <nav className="admin-nav" aria-label="Staff navigation">{navItems.map((item) => <div className={`nav-group ${item.id === 'accounts' && activeTab === 'accounts' ? 'is-expanded' : ''}`} key={item.id}><button className={activeTab === item.id ? 'active' : ''} type="button" onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}><span className="nav-icon"><Icon name={item.icon} size={18} /></span><span>{item.label}</span>{item.id === 'accounts' && <span className="nav-chevron"><Icon name="chevron" size={15} /></span>}</button>{item.id === 'accounts' && activeTab === 'accounts' && <ul className="sidebar-subnav" aria-label="Staff account sections"><li><button className={accountSection === 'list' ? 'active' : ''} type="button" onClick={() => setAccountSection('list')}>Danh sách</button></li><li><button className={accountSection === 'permissions' ? 'active' : ''} type="button" onClick={() => setAccountSection('permissions')}>Phân quyền</button></li><li><button className={accountSection === 'audit' ? 'active' : ''} type="button" onClick={() => setAccountSection('audit')}>Nhật ký truy cập</button></li></ul>}</div>)}</nav>
+        <nav className="admin-nav" aria-label="Staff navigation">{accessibleNavItems.map((item) => <div className={`nav-group ${item.id === 'accounts' && activeTab === 'accounts' ? 'is-expanded' : ''}`} key={item.id}><button className={activeTab === item.id ? 'active' : ''} type="button" onClick={() => { setActiveTab(item.id); setSidebarOpen(false); }}><span className="nav-icon"><Icon name={item.icon} size={18} /></span><span>{item.label}</span>{item.id === 'accounts' && <span className="nav-chevron"><Icon name="chevron" size={15} /></span>}</button>{item.id === 'accounts' && activeTab === 'accounts' && <ul className="sidebar-subnav" aria-label="Staff account sections"><li><button className={accountSection === 'list' ? 'active' : ''} type="button" onClick={() => setAccountSection('list')}>Danh sách</button></li><li><button className={accountSection === 'permissions' ? 'active' : ''} type="button" onClick={() => setAccountSection('permissions')}>Phân quyền</button></li><li><button className={accountSection === 'audit' ? 'active' : ''} type="button" onClick={() => setAccountSection('audit')}>Nhật ký truy cập</button></li></ul>}</div>)}</nav>
         <div className="sidebar-bottom"><div className="sidebar-help"><span>?</span><div><strong>Need help?</strong><small>Contact administrator</small></div></div><button className="sidebar-signout" type="button" onClick={onLogout}><Icon name="logout" size={17} /><span>Sign out</span></button></div>
       </aside>
 
       <main className="admin-main">
         <header className="admin-topbar"><button className="mobile-menu" type="button" aria-label="Open navigation" onClick={() => setSidebarOpen((open) => !open)}><Icon name="menu" /></button><div className="mobile-brand brand brand-dark"><span className="brand-mark">A</span><span><strong>AURELIA</strong><small>HOTEL OPERATIONS</small></span></div><div className="breadcrumb"><span>Staff portal</span><b>/</b><strong>{activeTab === 'dashboard' ? 'Overview' : 'Staff accounts'}</strong></div><div className="topbar-actions"><button className="notification-button" type="button" aria-label="Notifications"><Icon name="bell" size={19} /><i>3</i></button><div className="topbar-profile"><span className="avatar avatar-gold">{fullName.slice(0, 2).toUpperCase()}</span><span><strong>{fullName}</strong><small>{role}</small></span><span className="chevron">⌄</span></div></div></header>
-        <div className="admin-content">{notice && <div className="success-notice" role="status"><Icon name="check" size={16} />{notice}</div>}{activeTab === 'dashboard' ? <Dashboard firstName={firstName} setActiveTab={setActiveTab} /> : <Accounts staff={filteredStaff} total={staff.length} search={search} setSearch={setSearch} statusFilter={statusFilter} setStatusFilter={setStatusFilter} onCreate={() => setModal({ type: 'create' })} onEdit={(member) => setModal({ type: 'edit', member })} onToggle={toggleStatus} />}</div>
+        <div className="admin-content">{notice && <div className="success-notice" role="status"><Icon name="check" size={16} />{notice}</div>}{activeTab === 'dashboard' && canViewDashboard ? <Dashboard firstName={firstName} setActiveTab={setActiveTab} canManageStaffAccounts={canManageStaffAccounts} /> : canManageStaffAccounts && <Accounts staff={filteredStaff} total={staff.length} search={search} setSearch={setSearch} statusFilter={statusFilter} setStatusFilter={setStatusFilter} onCreate={() => setModal({ type: 'create' })} onEdit={(member) => setModal({ type: 'edit', member })} onToggle={toggleStatus} />}</div>
       </main>
       {modal && <AccountModal mode={modal.type} member={modal.member} onClose={() => setModal(null)} onSubmit={modal.type === 'edit' ? updateMember : handleCreateAccount} />}
     </div>
   );
 }
 
-function Dashboard({ firstName, setActiveTab }) {
+function Dashboard({ firstName, setActiveTab, canManageStaffAccounts }) {
   return <>
-    <div className="page-heading"><div><p className="eyebrow">Wednesday, October 07, 2026 <span className="heading-dot" /> Aurelia Hotel</p><h1>Good morning, {firstName}</h1><p>Here is the operational pulse of your hotel today.</p></div><button className="primary-button" type="button" onClick={() => setActiveTab('accounts')}><Icon name="plus" size={17} /> Add staff account</button></div>
+    <div className="page-heading"><div><p className="eyebrow">Wednesday, October 07, 2026 <span className="heading-dot" /> Aurelia Hotel</p><h1>Good morning, {firstName}</h1><p>Here is the operational pulse of your hotel today.</p></div>{canManageStaffAccounts && <button className="primary-button" type="button" onClick={() => setActiveTab('accounts')}><Icon name="plus" size={17} /> Add staff account</button>}</div>
     <section className="stat-grid">{stats.map((stat) => <article className="stat-card" key={stat.label}><div className={`stat-icon ${stat.tone}`}><Icon name={stat.icon} size={19} /></div><p>{stat.label}</p><strong>{stat.value}</strong><small className={stat.tone === 'rose' ? 'stat-change attention' : 'stat-change'}>{stat.detail}</small></article>)}</section>
     <div className="dashboard-grid"><section className="panel occupancy-panel"><PanelHeading eyebrow="Performance" title="Occupancy overview"><button className="select-button" type="button">This week <span>⌄</span></button></PanelHeading><div className="chart-wrap"><div className="chart-y-axis"><span>100%</span><span>75%</span><span>50%</span><span>25%</span><span>0%</span></div><div className="bar-chart">{[['Mon',62],['Tue',76],['Wed',68],['Thu',84],['Fri',91],['Sat',78],['Sun',64]].map(([day, value]) => <div className="bar-column" key={day}><div className="bar-value">{value}%</div><div className="bar-track"><div className="bar-fill" style={{ height: `${value}%` }} /></div><span>{day}</span></div>)}</div></div></section><section className="panel activity-panel"><PanelHeading eyebrow="Live updates" title="Recent activity"><button className="link-button" type="button">View all <Icon name="arrow" size={13} /></button></PanelHeading><div className="activity-list">{activities.map((activity) => <Activity key={activity.title} {...activity} />)}</div></section></div>
     <section className="panel arrivals-panel"><PanelHeading eyebrow="Front desk" title="Today’s arrivals"><button className="link-button" type="button">View reservations <Icon name="arrow" size={13} /></button></PanelHeading><div className="arrival-table"><div className="table-row table-head"><span>Guest</span><span>Room</span><span>Arrival</span><span>Status</span></div>{arrivals.map((arrival) => <div className="table-row" key={arrival.name}><span className="guest-cell"><span className={`avatar avatar-${arrival.color}`}>{arrival.initials}</span><span><strong>{arrival.name}</strong><small>{arrival.detail}</small></span></span><span>{arrival.room}</span><span>{arrival.time}</span><span className={`pill ${arrival.status.toLowerCase()}`}>{arrival.status}</span></div>)}</div></section>
@@ -143,4 +152,8 @@ function AccountModal({ mode, member, onClose, onSubmit }) {
   const firstName = member ? nameParts.slice(0, -1).join(' ') : '';
   const lastName = member ? nameParts.at(-1) : '';
   return <div className="modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && onClose()}><div className="account-modal" role="dialog" aria-modal="true" aria-labelledby="account-modal-title"><div className="modal-heading"><div><p className="eyebrow">Staff portal</p><h2 id="account-modal-title">{mode === 'edit' ? 'Edit staff account' : 'Invite a team member'}</h2><p>{mode === 'edit' ? 'Keep this person’s access details up to date.' : 'An invitation will be sent to their work email.'}</p></div><button className="close-button" type="button" onClick={onClose} aria-label="Close"><Icon name="close" /></button></div><form className="account-form" onSubmit={onSubmit}><div className="form-row"><label htmlFor="firstName">First name<input id="firstName" name="firstName" defaultValue={firstName} placeholder="Minh" required /></label><label htmlFor="lastName">Last name<input id="lastName" name="lastName" defaultValue={lastName} placeholder="Anh" required /></label></div><label htmlFor="email">Work email<input id="email" name="email" type="email" defaultValue={member?.email || ''} placeholder="name@aureliahotel.com" required /></label><div className="form-row"><label htmlFor="department">Department<select id="department" name="department" defaultValue={member?.department || 'Front office'}><option>Front office</option><option>Housekeeping</option><option>Operations</option><option>Maintenance</option></select></label><label htmlFor="role">Role<select id="role" name="role" defaultValue={member?.role || 'Receptionist'}><option>Receptionist</option><option>Housekeeper</option><option>Manager</option><option>Technician</option></select></label></div><div className="form-actions"><button className="secondary-button" type="button" onClick={onClose}>Cancel</button><button className="primary-button" type="submit">{mode === 'edit' ? 'Save changes' : 'Send invitation'}</button></div></form></div></div>;
+}
+
+function AccessDenied({ fullName, onLogout }) {
+  return <main className="access-denied"><div className="access-denied-card"><div className="brand brand-dark"><span className="brand-mark">A</span><span><strong>AURELIA</strong><small>HOTEL OPERATIONS</small></span></div><p className="eyebrow">Access restricted</p><h1>Hello, {fullName}</h1><p>Your account does not currently have permission to access the staff workspace. Please contact an administrator to assign the appropriate role permissions.</p><button className="secondary-button" type="button" onClick={onLogout}><Icon name="logout" size={17} /> Sign out</button></div></main>;
 }
