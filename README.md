@@ -1,41 +1,16 @@
-# Aurelia Hotel Management
+# React + Vite
 
-Aurelia Hotel Management is a web-based hotel management system designed for a luxury hotel in Ha Long.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Main Features
+Currently, two official plugins are available:
 
-- Room search and booking
-- Customer management
-- Check-in / Check-out
-- Room status management
-- Housekeeping management
-- Equipment and maintenance tracking
-- Payment management
-- Staff and role management
-- Monitoring and system logs
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
 
-## Tech Stack
+## React Compiler
 
-- React
-- Java Spring Boot
-- MySQL
-- Redis
-- Kafka
-- MinIO
-- Nginx
-- Docker
-- Prometheus
-- Grafana
-- Loki
-- OpenTelemetry
-- Grafana Tempo
+The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
 
-## System Structure
+## Expanding the ESLint configuration
 
-```text
-Customer Web ─┐
-              ├── Nginx ── Spring Boot API ── MySQL
-Staff Web ────┘                    │
-                                   ├── Redis
-                                   ├── MinIO
-                                   └── Kafka
+If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
